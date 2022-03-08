@@ -1,0 +1,3 @@
+[loader]
+xml_loader = xml_loader.XML_Loader:XML_Loader
+

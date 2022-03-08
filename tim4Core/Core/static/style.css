@@ -1,0 +1,145 @@
+.navbar {
+    background-color: #406882;
+    width: 98.5%;
+    padding: 10px;
+    display: block;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background-color: #1A374D;
+    color: white;
+    font-family: Verdana, Tahoma, sans-serif;
+    font-size: 13px;
+}
+
+table {
+    width: 90%;
+    border: none;
+    text-align: left;
+    border-spacing: 5px;
+}
+
+button{
+    background-color: #1A374D;
+    width: 100%;
+    border: none;
+    color: white;
+    padding: 5px 5px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+}
+#load_file_button {
+    background-color: #1A374D;
+    width: 100%;
+    border: none;
+    color: white;
+    padding: 5px 5px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+}
+
+button:hover{
+    background-color: #6998AB;
+}
+#load_file_button:hover{
+    background-color: #6998AB;
+}
+td {
+    padding: 5px 5px;
+}
+
+#search,
+#file-name {
+    width: 95%;
+}
+
+#loader-plugin {
+    width: 100%;
+}
+#visualiser-plugin {
+    width: 100%;
+}
+
+.container {
+    height: 80%;
+    box-sizing: border-box;
+    display: flex;
+}
+
+.tree-view {
+    width: 20%;
+    border: 2px solid #406882;
+    padding: 1rem;
+    margin-top: 5px;
+}
+
+.main-view {
+    width: 80%;
+    border: 2px solid #406882;
+    padding: 1rem;
+    margin-left: 5px;
+    margin-top: 5px;
+}
+
+#detailed-view{
+    position: fixed;
+    top: 200px;
+    right: 1rem;
+    width: 300px;
+    height: 200px;
+    padding: 1rem;
+    border: 2px solid #406882;
+    overflow: auto;
+}
+
+#bird-view {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    width: 300px;
+    height: 200px;
+    padding: 1rem;
+    border: 2px solid #406882;
+}
+
+/* tree view */
+ul {
+    list-style-type:none;
+}
+
+.childrenNotOpened:hover,
+.childrenOpened:hover{
+    cursor: pointer !important;
+    color: #406882;
+}
+
+#treeview {
+    max-width: 350px;
+    max-height: 650px;
+    overflow: auto;
+}
+
+li {
+    width: 200px !important;
+}
+
+.node {
+    color: white;
+}
+
+.node:hover{
+    cursor: pointer!important;
+}
+
+.edge {
+    fill:none;
+    stroke: black;
+    stroke-width: 1.5px;
+}
