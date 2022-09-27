@@ -1,0 +1,3 @@
+[loader]
+json_loader = json_loader.JSON_loader:JSONLoader
+

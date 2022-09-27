@@ -1,0 +1,123 @@
+        <script>
+            function nodeClick(nodeGroup){
+                let node = nodeGroup.__data__;
+                let id = "" + node.id;
+
+                var nodeClickedEvent = new CustomEvent('nodeClicked', {
+                    detail: {
+                        'id':id
+                    }
+                });
+                document.dispatchEvent(nodeClickedEvent);
+            }
+
+            function tick(e) {
+                node.attr("transform", function(d) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                }).call(force.drag);
+
+                edge.attr('x1', function(d) { return d.source.x; })
+                    .attr('y1', function(d) { return d.source.y; })
+                    .attr('x2', function(d) { return d.target.x; })
+                    .attr('y2', function(d) { return d.target.y; });
+            }
+            
+            var svg = d3.select("#canvas")
+                .append("svg").attr("width", 800).attr("height", 500)
+                .call(d3.behavior.zoom().on("zoom", redraw))
+                .append('svg:g');
+                    
+            function redraw() {
+                console.log("here", d3.event.translate, d3.event.scale);
+                svg.attr("transform",
+                    "translate(" + d3.event.translate + ")"
+                    + " scale(" + d3.event.scale + ")");
+            }
+
+            var nodes = {
+                {% for node in graph.get_nodes %}
+                    "node_{{node.id}}":{
+                        "id": "{{node.id}}",
+                        "attributes": {{node.attributes|safe|escape}}
+                    },
+                {% endfor %}
+            };
+
+            var edges = [
+                {% for node in graph.get_nodes %}
+                    {% for child in node.children %}
+                        {
+                            "source": "node_{{node.id}}",
+                            "target": "node_{{child.id}}"
+                        },
+                    {% endfor %}
+                {% endfor %}
+            ];
+
+            edges.forEach(function(edge) {
+                edge.source = nodes[edge.source];
+                edge.target = nodes[edge.target];
+            });
+
+            var force = d3.layout.force() 
+                .size([800, 500])
+                .nodes(d3.values(nodes))
+                .links(edges)
+                .on("tick", tick) 
+                .linkDistance(300)
+                .charge(-100)
+                .start(); 
+
+            // add the links
+            svg
+            .append("svg:defs")
+            .append("svg:marker")
+            .attr("id", "end-arrow")
+            .attr("viewBox", "0 -6 15 15")
+            .attr("refX", 5)
+            .attr("markerWidth", 8)
+            .attr("markerHeight", 8)
+            .attr("orient", "auto")
+            .append("svg:path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .attr("stroke", "yellow")
+            .attr("stroke-width", 1.75)
+            .attr("fill", "yellow");
+
+
+            var edge = svg.selectAll('.edge')
+                .data(edges)
+                .enter().append('line')
+                .attr('class', 'edge')
+                .attr('marker-mid', 'url(#end-arrow)');
+
+
+            var node = svg.selectAll('.node')
+                .data(force.nodes()) //add
+                .enter().append('g')
+                .attr('class', 'node')
+                .attr('id', function(d){return "node_" + d.id;})
+                .on('click', function(){
+                    nodeClick(this)
+            });
+
+            d3.selectAll('.node').each(function(d){
+                if (d) {
+                        d3.select("g#node_"+d.id)
+                        .append('circle')
+                        .attr('r',20)
+                        .attr('fill','white');
+
+                        d3.select("g#node_"+d.id)
+                        .append('text')
+                        .attr('fill', 'black')
+                        .text(d.id);
+                }
+
+            });
+
+            node.on("mousedown", function() { d3.event.stopPropagation(); });
+                
+            
+
+        </script>

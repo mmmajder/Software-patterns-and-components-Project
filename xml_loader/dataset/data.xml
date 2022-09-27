@@ -1,0 +1,15 @@
+<XML_ROOT>
+    <element_0 id="0" name="Nis" opis="NI" population="280000" reference="1"/>
+    <element_1 id="1" name="Beograd" opis="BG" population="1000000" reference="2 3"/>
+    <element_2 id="2" name="Novi Sad" opis="NS" population="240000" reference="4 3">
+        <element_20 id="20" name="Futog" opis="FU" population="4000" reference=""/>
+        <element_21 id="21" name="Liman" opis="LI" population="6000" reference="">
+            <element_210 id="210" name="Liman 4" opis="LI4" population="3000" reference="7"/>
+        </element_21>
+    </element_2>
+    <element_3 id="3" name="Krusevac" opis="KS" population="62000" reference="4"/>
+    <element_4 id="4" name="Vranje" opis="VR" population="42000" reference="5"/>
+    <element_5 id="5" name="Skopje" opis="SK" population="429000" reference="6"/>
+    <element_6 id="6" name="Kragujevac" opis="KG" population="123000" reference=""/>
+    <element_7 id="7" name="Valjevo" opis="VA" population="24000" reference="2"/>
+</XML_ROOT>

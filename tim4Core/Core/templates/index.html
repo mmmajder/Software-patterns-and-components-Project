@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/style.css">
+    <link rel="icon" href="../static/images/graph.png">
+    <title>Graph representation</title>
+    <script type="text/javascript" src="https://d3js.org/d3.v3.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://d3js.org/d3.v3.js"></script>
+    <script src="../static/jquery-3.6.0.min.js"></script>
+    <script src="../static/tree_view.js"></script>
+    <script src="../static/click_handler.js"></script>
+</head>
+
+<body>
+    <!--NAVBAR-->
+    <div class="navbar">
+        <table>
+            <tr>
+                <th>Choose loader plugin:</th>
+                <th>Input file name:</th>
+                <th>Choose visualiser plugin:</th>
+                <th>Filter:</th>
+                <th>Search:</th>
+            </tr>
+            <tr>
+                <td>
+                    <select id="loader-plugin" onchange="sendChosenLoadPlugin()">
+                        {% if loader_plugins %}
+                            <option name="none"></option>
+                            {% for p in loader_plugins %}
+                                <option value="{% url 'load_plugin' loader_plugin_id=p.identifier %}">
+                                    {{p.name}}
+                                </option>
+                            {% endfor %}
+                        {% else %}
+                            <option name="none">No loader plugins</option>
+                        {% endif %}
+                    </select>
+                </td>
+                <td>
+                    <form name="file_form" id="file_form" enctype="multipart/form-data" method="POST" action="{% url 'file' %}">
+                        <input style="color:#1A374D" name="file_field" id="file-name" type="file">
+                    </form>
+                </td>
+                <td>
+                    <select id="visualiser-plugin" onchange="sendChosenVisPlugin()">
+                        {% if visualiser_plugins %}
+                            <option name="none"></option>
+                            {% for p in visualiser_plugins %}
+                               <option value="{% url 'visual_plugin' visualiser_plugin_id=p.identifier %}">
+                                    {{p.name}}
+                                </option>
+                            {% endfor %}
+                        {% else %}
+                            <option name="none">No visualiser plugins</option>
+                        {% endif %}
+                    </select>
+                </td>
+
+                <td>
+                    <input type="text" placeholder="Enter attribute name" id="attribute-name">
+                    <select id="filter-operation">
+                        <option>==</option>
+                        <option>></option>
+                        <option>>=</option>
+                        <option><</option>
+                        <option><=</option>
+                        <option>!=</option>
+                    </select>
+                    <input type="text" placeholder="Enter attribute value" id="attribute-value">
+                </td>
+                <td>
+                    <input type="text" placeholder="Search..." id="search">
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td> <input type="submit" id="load_file_button" form="file_form" value="Load file"> </td>
+                {% csrf_token %}
+                <td><button id="changeViewButton">Change view</button></td>
+                <td><button onclick="filterFunction()">Filter data</button></td>
+                <td><button onclick="searchFunction()">Search graph</button></td>
+                <td><button onclick="loadFile()">Reset all</button></td>
+            </tr>
+        </table>
+    </div>
+    <div class="container">
+        <!--TREE VIEW-->
+        <div class="tree-view" id="treeview">
+            Tree view
+            <ul id="tree">
+
+            </ul>
+        </div>
+        <!--MAIN VIEW-->
+        <div class="main-view">
+            Main view
+            <div class="canvas" id="canvas">
+                {{graph_html|safe|escape}}
+            </div>
+
+            {{graph_html|safe|escape}}
+            <!--DETAILED VIEW-->
+            <div id="detailed-view">
+                Detailed view
+                <ul id="detailed-view-list">
+
+                </ul>
+            </div>
+
+            <!--BIRD VIEW-->
+            <div id="bird-view">
+                Bird view
+
+                <script>
+                    const canvas = document.getElementById('canvas');
+                    const config = {
+                        attributes: true,
+                        childList: true,
+                        subtree: true
+                    }
+
+                    const callback = function(mutationsList, observer) {
+                        let canvas = d3.select("#canvas").html();
+                        let birdView = d3.select("#bird-view").html(canvas);
+
+                        try {
+                            var canvas_width = d3.select("svg").attr('width');
+                            var bird_width = 300;
+                            var canvas_height = d3.select("svg").attr('height');
+
+                            var bird_height = 200;
+                            var scale_width = bird_width/canvas_width;
+                            var scale_height = bird_height/canvas_height;
+
+                            var scale = Math.min(scale_width, scale_height);
+                            scale = scale / 2;
+
+                            var x = d3.select("#bird-view").select("g").node().getBBox().x;
+                            var y = d3.select("#bird-view").select("g").node().getBBox().y;
+
+                            d3.select("#bird-view").select("g").attr("transform", "translate (" + [-x * scale, -y * scale] + ") scale(" + scale + ")");
+                        } catch (e) {}
+                    };
+
+                    const observer = new MutationObserver(callback);
+                    observer.observe(canvas, config)
+                </script>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+    $("#file_form").submit(function(event) {
+        event.preventDefault();
+        loadFile()
+    });
+
+    function loadFile(){
+        var formData = new FormData();
+        formData.append('file_field', $("input[name=file_field]")[0].files[0]);
+        $.ajax({
+            url: "{% url 'file' %}",
+            type: "POST",
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function() {
+                $('#attribute-name').val('');
+                $('#attribute-value').val('');
+                $('#search').val('');
+                $("#canvas").empty();
+                createRoots();
+                viewGraph();
+            },
+            error: function() {
+                alert("Oops, something went wrong!")
+            }
+        });
+    }
+
+    $("#changeViewButton").click(function() {
+        createRoots();
+        //openNode(3);
+        viewGraph();
+    })
+
+    function sendChosenLoadPlugin() {
+        let value = $('#loader-plugin').val();
+        $.post({
+            url: value,
+            success: function(message) {},
+            error: function(message) {}
+        });
+    }
+
+    function sendChosenVisPlugin() {
+        let value = $('#visualiser-plugin').val();
+        $.post({
+            url: value,
+            success: function(message) {},
+            error: function(message) {
+                console.log(message.responseText)
+            }
+        });
+    }
+
+    function viewGraph() {
+        $.post({
+            url: "{% url 'viewGraph' %}",
+            success: function(html) {
+                $("#canvas").empty();
+                $("#canvas").append(html['graph_html']);
+            },
+            error: function(html) {
+                console.log(html.responseText)
+            }
+        });
+    }
+
+
+    function searchFunction() {
+        let input = $('#search').val();
+        if (!input) {
+            input = "null"
+        }
+        $.ajax({
+            url: "/search/" + input,
+            method: "POST",
+            success: function(retVal) {
+                createRoots();
+                $("#canvas").empty();
+                $("#canvas").append(retVal['graph_html']);
+            },
+            error: function(retVal) {
+                alert(retVal.responseText)
+            }
+        });
+    }
+
+    function filterFunction() {
+        var attribute = $('#attribute-name').val();
+        var operator = $('#filter-operation').find(":selected").text();
+        var value = $('#attribute-value').val();
+        if (attribute == "" || value == "") {
+            alert('Please enter filter attribute name and value.');
+            return;
+        }
+        expression = attribute + operator + value;
+        $.ajax({
+            url: "/filter/" + expression,
+            method: "POST",
+            success: function(retVal) {
+                createRoots();
+                $("#canvas").empty();
+                $("#canvas").append(retVal['graph_html']);
+            },
+            error: function(retVal) {
+                alert(retVal.responseText);
+            }
+        });
+    }
+</script>
+
+</html>

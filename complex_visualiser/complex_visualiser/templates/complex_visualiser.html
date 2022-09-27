@@ -1,0 +1,189 @@
+<script>
+    function nodeClick(nodeGroup){
+        let node = nodeGroup.__data__;
+        let id = "" + node.id;
+
+        var nodeClickedEvent = new CustomEvent('nodeClicked', {
+            detail: {
+                'id':id
+            }
+        });
+        document.dispatchEvent(nodeClickedEvent);
+    }
+    
+    var svg = d3.select("#canvas")
+                .append("svg").attr("width", 800).attr("height", 500)
+                .call(d3.behavior.zoom().on("zoom", redraw))
+    .append('svg:g');
+
+     function redraw() {
+          console.log("here", d3.event.translate, d3.event.scale);
+          svg.attr("transform",
+              "translate(" + d3.event.translate + ")"
+              + " scale(" + d3.event.scale + ")");
+     }
+
+    var nodes = {
+        {% for node in graph.get_nodes()%}
+            "node_{{node.id}}":{
+                id: "{{node.id}}",
+                attributes: {{node.attributes}},
+            },
+        {% endfor %}
+    }
+    var edges = [
+        {% for node in graph.get_nodes() %}
+            {% for child in node.children %}
+                {
+                    "source": "node_{{node.id}}",
+                    "target": "node_{{child.id}}"
+                },
+            {% endfor %}
+        {% endfor %}
+    ];
+
+    edges.forEach(function(edge) {
+        edge.source = nodes[edge.source];
+        edge.target = nodes[edge.target];
+    });
+
+    var force = d3.layout.force()
+            .size([800, 500])
+            .nodes(d3.values(nodes))
+            .links(edges)
+            .on("tick", tick)
+            .linkDistance(500)
+            .charge(-100)
+            .start();
+
+
+    function tick(e) {
+        node.attr("transform", function(d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        }).call(force.drag);
+
+        edge.attr('x1', function(d) { return d.source.x; })
+            .attr('y1', function(d) { return d.source.y; })
+            .attr('x2', function(d) { return d.target.x; })
+            .attr('y2', function(d) { return d.target.y; });
+    }
+
+    svg
+    .append("svg:defs")
+    .append("svg:marker")
+    .attr("id", "end-arrow")
+    .attr("viewBox", "0 -6 15 15")
+    .attr("refX", 5)
+    .attr("markerWidth", 8)
+    .attr("markerHeight", 8)
+    .attr("orient", "auto")
+    .append('circle')
+    .attr('cx', 10)
+    .attr('cy', 10)
+    .attr('r', 20)
+    .style("fill", "yellow");
+
+
+    var edge = svg.selectAll('.edge')
+        .data(edges)
+        .enter().append('line')
+        .attr('class', 'edge')
+        .attr('marker-end', 'url(#end-arrow)');
+
+
+    // add the nodes
+    var node = svg.selectAll('.node')
+        .data(force.nodes()) //add
+        .enter().append('g')
+        .attr('class', 'node')
+        .attr('id', function(d){return "n"+d.id;})
+        .on('click',function(){
+            nodeClick(this);
+        });
+    node.on("mousedown", function() { d3.event.stopPropagation(); });
+    d3.selectAll('.node').each(function(d){complex_visualiser(d);});
+
+    function complex_visualiser(d) {
+        if (d) {
+            var length = 150
+            var line_height = 10;
+            var number_of_attributes = Object.keys(d.attributes).length
+            var height = line_height;  // for id
+
+            var letters_per_row = 30;
+
+            let rows = []
+            var j=0;  //num_lines_attributes
+            for (var i=0; i<number_of_attributes; i++) {
+                rows.push("");
+                var text_of_attribute = [Object.keys(d.attributes)[i]] + ": " + [Object.values(d.attributes)[i]];
+
+                for (var word of text_of_attribute.split(" ")) {
+                    if (rows[j].length + word.length<=letters_per_row) {
+                        if (rows[j]!="") {
+                            rows[j]+=" ";
+                        }
+                        rows[j]+=word;
+                    } else {
+                        while (word.length>letters_per_row) {
+                            first_part = word.substring(0, letters_per_row);
+                            rows.push(first_part);
+                            word = word.slice(letters_per_row);
+                            j++;
+                        }
+                        rows.push(word);
+                        j++;
+                    }
+                }
+                j++;
+            }
+            height += j * line_height
+
+
+            //create rect
+            d3.select("g#n"+d.id)
+              .append('rect')
+              .attr('x',0)
+              .attr('y',0)
+              .attr('width',length)
+              .attr('height',height)
+              .attr('fill','white');
+
+            // show id
+            d3.select("g#n"+d.id)
+              .append('text')
+              .attr('x',length/2)
+              .attr('y',10)
+              .attr('text-anchor','middle')
+              .attr('font-size',line_height)
+              .attr('font-family','sans-serif')
+              .attr('fill','black')
+              .text(d.id);
+
+            // show separator
+            d3.select("g#n"+d.id)
+              .append('line')
+              .attr('x1',0)
+              .attr('y1',line_height)
+              .attr('x2',length)
+              .attr('y2',line_height)
+              .attr('stroke','gray')
+              .attr('stroke-width',2);
+
+            for(var i in rows)
+            {
+              // Prikaz naziva kategorije
+              d3.select("g#n"+d.id)
+                  .append('text')
+                  .attr('x',0)
+                  .attr('y',20+i*line_height)
+                  .attr('text-anchor','start')
+                  .attr('font-size',line_height)
+                  .attr('font-family','sans-serif')
+                  .attr('fill','black')
+                  .text(rows[i]);
+            }
+        }
+    }
+    
+</script>
