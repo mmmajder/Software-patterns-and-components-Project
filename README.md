@@ -8,7 +8,7 @@ App is divided in components:
 - Simple visualiser
 - Complex visualiser
 
-### Display
+## Display
 - Main screen
 - Tree view - left side
 - Bird view - right bottom corner
